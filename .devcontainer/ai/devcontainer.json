@@ -1,0 +1,16 @@
+{
+    "name": "Python 3.9 Dev Container",
+    "dockerFile": "Dockerfile",
+    "settings": {
+      "terminal.integrated.defaultProfile.linux": "bash"
+    },
+    "extensions": [
+      "ms-python.python",
+      "ms-azuretools.vscode-docker"
+    ],
+    "forwardPorts": [8000],
+    "postCreateCommand": "pip install --no-cache-dir -r ai/requirements.txt",
+    "runArgs": [
+      "--network=briefer_network"
+    ]
+  }

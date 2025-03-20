@@ -6,7 +6,7 @@
 
 html {
   height: 100vh;
-  overflow-y: hidden;
+  /* overflow-y: hidden; */
 }
 
 body {
@@ -14,12 +14,12 @@ body {
   height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow-y: hidden;
+  /* overflow-y: hidden; */
 }
 
 #__next {
   height: 100vh;
-  overflow-y: hidden;
+  /* overflow-y: hidden; */
 }
 
 @media (prefers-color-scheme: dark) {
@@ -129,7 +129,7 @@ body {
 
 .python-html-output {
   font-size: 0.7rem;
-  overflow: auto;
+  /* overflow: auto; */
 }
 
 .python-html-output thead {
@@ -141,7 +141,7 @@ body {
 .python-html-output th,
 .python-html-output td {
   max-width: 250px;
-  overflow: auto;
+  /* overflow: auto; */
   padding: 0.3rem 0.5rem;
   border: 1px solid theme(colors.gray.200);
   white-space: nowrap;
@@ -182,14 +182,6 @@ body {
 
 .editor-v2 .tippy-arrow {
   display: none !important;
-}
-
-.no-scrollbar {
-  -ms-overflow-style: none; /* Internet Explorer 10+ */
-  scrollbar-width: none; /* Firefox */
-}
-.no-scrollbar::-webkit-scrollbar {
-  display: none; /* Safari and Chrome */
 }
 
 .tiptap.briefer-editor-body ul {

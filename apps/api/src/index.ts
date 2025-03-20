@@ -21,7 +21,7 @@ import { startPubSubPayloadCleanup } from './yjs/v2/pubsub/pg.js'
 
 const getDBUrl = async () => {
   const username = config().POSTGRES_USERNAME
-  const hostname = config().POSTGRES_HOSTNAME
+  const hostname =  config().POSTGRES_HOSTNAME
   const port = Number(config().POSTGRES_PORT)
   const database = config().POSTGRES_DATABASE
   const password = config().POSTGRES_PASSWORD

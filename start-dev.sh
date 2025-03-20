@@ -16,14 +16,14 @@ if [ ! -f ./apps/api/.env ]; then
   echo "PYTHON_ALLOWED_LIBRARIES='plotly,matplotlib,numpy,pandas'" >> ./apps/api/.env
   echo "POSTGRES_USERNAME=postgres" >> ./apps/api/.env
   echo "POSTGRES_PASSWORD=password" >> ./apps/api/.env
-  echo "POSTGRES_HOSTNAME=localhost" >> ./apps/api/.env
+  echo "POSTGRES_HOSTNAME=postgres" >> ./apps/api/.env
   echo "POSTGRES_PORT=5432" >> ./apps/api/.env
 
   echo "POSTGRES_DATABASE=briefer" >> ./apps/api/.env
   echo "ENVIRONMENT_VARIABLES_ENCRYPTION_KEY=$(openssl rand -hex 32)" >> ./apps/api/.env
   echo "DATASOURCES_ENCRYPTION_KEY=$(openssl rand -hex 32)" >> ./apps/api/.env
   echo "WORKSPACE_SECRETS_ENCRYPTION_KEY=$(openssl rand -hex 32)" >> ./apps/api/.env
-  echo "JUPYTER_HOST=localhost" >> ./apps/api/.env
+  echo "JUPYTER_HOST=jupyter_server" >> ./apps/api/.env
   echo "JUPYTER_PORT=8888" >> ./apps/api/.env
   echo "JUPYTER_TOKEN=$(openssl rand -hex 24)" >> ./apps/api/.env
   echo "OPENAI_API_KEY=sk-placeholder" >> ./apps/api/.env
@@ -41,6 +41,8 @@ if [ ! -f ./apps/web/.env ]; then
   echo "Generated a new ./apps/eb/.env file with default values"
 fi
 
+# Create jupyterfiles folder if not exists
+mkdir -p ./jupyterfiles
 # Read JUPYTER_TOKEN from apps/api/.env, remove single and double quotes
 JUPYTER_TOKEN=$(grep JUPYTER_TOKEN ./apps/api/.env | cut -d '=' -f 2 | tr -d "'" | tr -d '"')
 

@@ -1,0 +1,17 @@
+{
+    "name": "Node.js 18 Dev Container",
+    "dockerFile": "Dockerfile",
+    "settings": {
+      "terminal.integrated.defaultProfile.linux": "bash"
+    },
+    "extensions": [
+      "dbaeumer.vscode-eslint",
+      "esbenp.prettier-vscode"
+    ],
+    "forwardPorts": [3000, 4000],
+    "postCreateCommand": "yarn install",
+    "remoteUser": "node",
+    "runArgs": [
+      "--network=briefer_network"
+    ]
+  }

@@ -5,6 +5,8 @@ services:
       dockerfile: Dockerfile
     ports:
       - '5432:5432'
+    networks:
+      - briefer_network
     environment:
       POSTGRES_DB: 'briefer'
       POSTGRES_USER: 'postgres'
@@ -26,6 +28,8 @@ services:
     environment:
       NODE_ENV: 'development'
       POSTGRES_PRISMA_URL: 'postgresql://postgres:password@postgres:5432/briefer?schema=public'
+    networks:
+      - briefer_network
     depends_on:
       postgres:
         condition: service_healthy
@@ -42,6 +46,8 @@ services:
       - 'jupyter server --ip=0.0.0.0 --ZMQChannelsWebsocketConnection.iopub_data_rate_limit=1.0e10 --ZMQChannelsWebsocketConnection.iopub_msg_rate_limit=1.0e6 --ServerApp.max_body_size=107374182400'
     ports:
       - '8888:8888'
+    networks:
+      - briefer_network
     environment:
       # Use passed value
       JUPYTER_TOKEN: ${JUPYTER_TOKEN:?error}
@@ -72,7 +78,14 @@ services:
       - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
     ports:
       - '8080:8080'
+    networks:
+      - briefer_network
 
 volumes:
   postgres_dev_data:
   ecommerce_data:
+
+networks:
+  briefer_network:
+    driver: bridge
+    name: briefer_network
