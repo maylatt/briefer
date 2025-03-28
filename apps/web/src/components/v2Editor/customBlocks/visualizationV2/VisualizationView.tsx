@@ -35,7 +35,7 @@ import {
   VisualizationV2BlockOutputResult,
   XAxis,
 } from '@briefer/editor'
-import { head } from 'ramda'
+import { head, uniq } from 'ramda'
 
 const FONT_FAMILY = ['Inter', ...twFontFamiliy.sans].join(', ')
 
@@ -90,7 +90,7 @@ function VisualizationViewV2(props: Props) {
               <LargeSpinner color="#b8f229" />
             </div>
           )}
-          {!props.tooManyDataPointsHidden && !props.hasControls && (
+          {!props.tooManyDataPointsHidden && props.hasControls && (
             <div className="absolute top-0 left-0 right-0 bg-yellow-50 p-2">
               <div className="flex items-center justify-center gap-x-2">
                 <ExclamationTriangleIcon className="h-4 w-4 text-yellow-500" />
@@ -331,8 +331,51 @@ function BrieferResult(props: {
       },
       grid,
       xAxis: xAxes.map((axis) => axis.option),
-      yAxis: props.result.yAxis.map((axis) => ({
+      yAxis: props.result.yAxis.map((axis, i) => ({
         ...axis,
+        axisLabel: {
+          formatter: (value: string | number): string => {
+            const format:
+              | null
+              | { _tag: 'date'; format: DateFormat }
+              | { _tag: 'number'; format: NumberFormat } =
+              props.input.yAxes[i]?.series
+                .map((s) => {
+                  if (!s.column) {
+                    return null
+                  }
+
+                  if (NumpyDateTypes.safeParse(s.column.type).success) {
+                    if (s.dateFormat) {
+                      return { _tag: 'date' as const, format: s.dateFormat }
+                    }
+                  }
+
+                  if (NumpyNumberTypes.safeParse(s.column.type).success) {
+                    if (s.numberFormat) {
+                      return { _tag: 'number' as const, format: s.numberFormat }
+                    }
+                  }
+
+                  return null
+                })
+                .find((f) => f !== null) ?? null
+
+            if (!format) {
+              return value.toString()
+            }
+
+            if (typeof value === 'number' && format._tag === 'number') {
+              return formatNumber(value, format.format)
+            }
+
+            if (format._tag === 'date') {
+              return formatDateTime(value, format.format)
+            }
+
+            return value.toString()
+          },
+        },
       })),
       tooltip: {
         ...props.result.tooltip,
@@ -372,68 +415,68 @@ function BrieferResult(props: {
             }
           })()
 
-          return `
-            <div>
-              ${xFormatted}
-              <div>
-                ${params
-                  .map((param, i) => {
-                    const dataset = props.result.dataset[i]
-                    const row = dataset.source[param.dataIndex]
-                    let result = ''
-                    for (const [key, value] of Object.entries(row)) {
-                      if (key === props.input.xAxis?.name) {
-                        continue
-                      }
+          let yValues = ''
+          let counter = 0
+          for (const [i, param] of Array.from(params.entries())) {
+            if (counter > 15) {
+              break
+            }
 
-                      let seriesInput: SeriesV2 | null = null
-                      for (const yAxis of props.input.yAxes) {
-                        for (const series of yAxis.series) {
-                          if (series.id === key) {
-                            seriesInput = series
-                            break
-                          }
-                        }
-                      }
+            const dataset = props.result.dataset[i]
+            const row = dataset.source[param.dataIndex] ?? []
+            let result = ''
+            for (const [key, value] of Object.entries(row)) {
+              if (
+                key === props.input.xAxis?.name ||
+                value === 0 ||
+                value === ''
+              ) {
+                continue
+              }
 
-                      let formattedValue = value
-                      if (seriesInput?.column) {
-                        if (
-                          NumpyDateTypes.safeParse(seriesInput.column.type)
-                            .success
-                        ) {
-                          formattedValue = formatDateTime(
-                            value,
-                            seriesInput.dateFormat
-                          )
-                        } else if (
-                          NumpyNumberTypes.safeParse(seriesInput.column.type)
-                            .success &&
-                          typeof value === 'number' &&
-                          seriesInput.numberFormat
-                        ) {
-                          formattedValue = formatNumber(
-                            value,
-                            seriesInput.numberFormat
-                          )
-                        }
-                      }
+              let seriesInput: SeriesV2 | null = null
+              for (const yAxis of props.input.yAxes) {
+                for (const series of yAxis.series) {
+                  if (series.id === key) {
+                    seriesInput = series
+                    break
+                  }
+                }
+              }
 
-                      result += `<div style="display: flex; align-items: center; justify-content: space-between; gap: 20px;">
+              let formattedValue = value
+              if (seriesInput?.column) {
+                if (NumpyDateTypes.safeParse(seriesInput.column.type).success) {
+                  formattedValue = formatDateTime(value, seriesInput.dateFormat)
+                } else if (
+                  NumpyNumberTypes.safeParse(seriesInput.column.type).success &&
+                  typeof value === 'number' &&
+                  seriesInput.numberFormat
+                ) {
+                  formattedValue = formatNumber(value, seriesInput.numberFormat)
+                }
+              }
+
+              result += `<div style="display: flex; align-items: center; justify-content: space-between; gap: 20px;">
                       <div>${param.marker ?? ''}${param.seriesName ?? key}</div>
                       <div>${formattedValue}</div>
                     </div>`
-                    }
+              counter++
+            }
 
-                    return result
-                  })
-                  .join('')}
+            yValues += result
+          }
+
+          return `
+            <div>
+              ${xFormatted}
+              <div>${yValues}</div>
             </div>
           `
         },
       },
     }
-  }, [props.result, props.input, size])
+  }, [props.result, props.input, props.hasControls, props.title])
 
   if (!size) {
     return <div className="w-full h-full" ref={measureDiv} />
@@ -503,8 +546,8 @@ function Echarts(props: EchartsProps) {
       const xAxes = Array.isArray(props.option.xAxis)
         ? props.option.xAxis
         : props.option.xAxis
-        ? [props.option.xAxis]
-        : []
+          ? [props.option.xAxis]
+          : []
       let isRotated = false
       const nextXAxes = xAxes.map((xAxis) => {
         if (!xAxis || xAxis.type !== 'category') {
@@ -556,10 +599,10 @@ function Echarts(props: EchartsProps) {
                 left: isRotated ? '60' : props.option.grid.left,
               }
           : isRotated
-          ? {
-              left: '60',
-            }
-          : undefined,
+            ? {
+                left: '60',
+              }
+            : undefined,
       })
       setIsReady(true)
       hiddenChart.dispose()
@@ -868,9 +911,11 @@ function getValueAxis(
 
   let min = -Infinity
   let max = Infinity
-  const xFields = result.series
-    .map((s) => s.encode?.x)
-    .filter((x): x is string | number => x !== undefined)
+  const xFields = uniq(
+    result.series
+      .map((s) => s.encode?.x)
+      .filter((x): x is string | number => x !== undefined)
+  )
   const values = result.dataset
     .flatMap((d) =>
       xFields.flatMap((f) => d.source.flatMap((r) => r[f.toString()]))
@@ -1020,8 +1065,8 @@ function getTimeAxis(
       axisTick: {
         show: false,
       },
-      min: min.getTime() - minInterval / 2,
-      max: max.getTime() + minInterval / 2,
+      min: (min?.getTime() ?? 0) - minInterval / 2,
+      max: (max?.getTime() ?? 0) + minInterval / 2,
       minInterval,
       splitLine: {
         show: false,
@@ -1076,6 +1121,13 @@ function getCategoryAxis(axis: XAxis) {
       axisLabel: {
         hideOverlap: true,
         interval: 0,
+        formatter: (value: string | number): string => {
+          if (typeof value === 'number') {
+            return value.toString()
+          }
+
+          return value.length > 20 ? value.slice(0, 20) + '...' : value
+        },
       },
       splitLine: {
         show: false,
